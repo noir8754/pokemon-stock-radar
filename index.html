@@ -17,7 +17,7 @@
 </style>
 </head>
 <body><div class="wrap">
-<section class="hero"><div class="eyebrow">LIVE TEST v1.4</div><h1>Pokémon 카드 재고 레이더</h1><p>재고가 실제로 1개 이상 확인된 포켓몬카드 상품만 표시합니다.</p></section>
+<section class="hero"><div class="eyebrow">LIVE TEST v1.5</div><h1>Pokémon 카드 재고 레이더</h1><p>재고가 실제로 1개 이상 확인된 포켓몬카드 상품만 표시합니다.</p></section>
 <section class="toolbar">
 <div class="panel"><label>지역 검색</label><input id="place" placeholder="예: 강남역, 잠실, 하남 감일동"/><div class="quick"><button data-lat="37.4765" data-lng="126.9638">낙성대</button><button data-lat="37.5086" data-lng="127.1607">감일동</button><button id="me">내 위치</button></div></div>
 <div class="panel"><label>편의점</label><select id="brand"><option value="all">전체</option><option value="GS25">GS25</option><option value="emart24">이마트24</option><option value="CU">CU</option><option value="7ELEVEN">세븐일레븐</option></select></div>
@@ -40,6 +40,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,att
 const markers=L.layerGroup().addTo(map);
 let grouped=[],diag={};
 function qs(o){return new URLSearchParams(Object.entries(o).filter(([,v])=>v!==undefined&&v!==null&&v!==''))}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
 async function get(path,p={}){const r=await fetch(API+path+'?'+qs(p),{cache:'no-store'});let j=null;try{j=await r.json()}catch{}if(!r.ok)throw new Error('HTTP '+r.status+(j?.error?.message?' · '+j.error.message:''));return j}
 function product(brand,p){return{brand,name:p.name||p.itemName||p.shortItemName||p.goodsName||p.productName||'상품',code:p.itemCode||p.pluCd||p.code||p.id||'',price:p.sellPrice??p.viewPrice??p.originPrice??p.price??null}}
 function isTCG(name){const s=(name||'').replace(/\s+/g,'').toLowerCase();if(/(교통카드|이즐|티머니|캐시비|ic칩|ic카드|카드케이스|케이스|슬리브|프로텍터|바인더|앨범|파일|홀더|지갑|스티커|키링|피규어|인형|문구|볼펜|초코|쿠키|음료|캔디|젤리|빵|우유|아이스크림|껌|스낵|과자|라면|주스|탄산|커피|사탕|초콜릿|파이)/i.test(s))return false;return /(확장팩|강화확장팩|부스터|스타터덱|스타트덱|구축덱|덱세트|스페셜세트|컬렉션세트|트레이너박스|pokemon.*card|포켓몬.*카드|30th.*(팩|박스|box|celebration)|celebration)/i.test(s)}
@@ -58,7 +59,11 @@ async function inventory(brand,p,lat,lng){
     try{return await get('/api/gs25/inventory',{keyword:p.name,itemCode:p.code||undefined,lat,lng,storeLimit:50,timeoutMs:20000})}
     catch(first){try{return await get('/api/gs25/inventory',{keyword:p.name,lat,lng,storeLimit:50,timeoutMs:20000})}catch(second){throw new Error(second.message||first.message)}}
   }
-  if(brand==='emart24')return get('/api/emart24/inventory',{pluCd:p.code||undefined,keyword:p.code?undefined:p.name,lat,lng,storeLimit:30});
+  if(brand==='emart24'){
+    const params={pluCd:p.code||undefined,keyword:p.code?undefined:p.name,lat,lng,storeLimit:30};
+    try{return await get('/api/emart24/inventory',params)}
+    catch(first){await sleep(650);try{return await get('/api/emart24/inventory',params)}catch(second){throw new Error(second.message||first.message)}}
+  }
   if(brand==='CU')return get('/api/cu/inventory',{keyword:p.name,lat,lng,size:30,storeLimit:50});
   if(brand==='7ELEVEN')return get('/api/seveneleven/inventory',{keyword:p.name,lat,lng,storeLimit:50,timeoutMs:20000});
 }
@@ -76,27 +81,13 @@ function addRows(rows,brand,p,ss){for(const s of ss)rows.push({brand,product:p,s
 function group(rows){const m=new Map();for(const r of rows){const key=r.brand+'|'+(r.store.code||r.store.name);if(!m.has(key))m.set(key,{brand:r.brand,...r.store,items:[]});const g=m.get(key),ik=r.product.name+'|'+r.product.code;if(!g.items.some(x=>x.key===ik))g.items.push({...r.product,key:ik,stock:r.store.stock})}return [...m.values()]}
 function activeBrands(){const v=document.getElementById('brand').value;return v==='all'?ALL:[v]}
 function statusBox(brands){
-  const root=document.getElementById('brandStatus');
-  root.replaceChildren();
-  for(const b of brands){
-    const d=diag[b]||{phase:'pending',text:'대기 중'};
-    const card=document.createElement('div');
-    card.className='brand-status '+(d.phase==='ok'?'ok':d.phase==='error'?'err':'pending');
-    const strong=document.createElement('strong');
-    strong.textContent=LABEL[b];
-    const span=document.createElement('span');
-    span.textContent=String(d.text||'');
-    card.append(strong,span);
-    root.append(card);
-  }
+  const root=document.getElementById('brandStatus');root.replaceChildren();
+  for(const b of brands){const d=diag[b]||{phase:'pending',text:'대기 중'};const card=document.createElement('div');card.className='brand-status '+(d.phase==='ok'?'ok':d.phase==='error'?'err':'pending');const strong=document.createElement('strong');strong.textContent=LABEL[b];const span=document.createElement('span');span.textContent=String(d.text||'');card.append(strong,span);root.append(card)}
 }
 async function mapLimit(items,limit,fn){let next=0;const workers=Array.from({length:Math.min(limit,items.length)},async()=>{while(next<items.length){const i=next++;await fn(items[i],i)}});await Promise.all(workers)}
 function render(){
   const root=document.getElementById('stores'),bounds=map.getBounds(),sel=document.getElementById('brand').value;
-  const list=grouped.filter(s=>(sel==='all'||s.brand===sel)&&Number.isFinite(s.lat)&&Number.isFinite(s.lng)&&bounds.contains([s.lat,s.lng]))
-    .map(s=>({...s,items:s.items.filter(x=>Number.isFinite(Number(x.stock))&&Number(x.stock)>0).sort((a,b)=>Number(b.stock)-Number(a.stock))}))
-    .filter(s=>s.items.length)
-    .sort((a,b)=>Math.max(...b.items.map(x=>Number(x.stock)))-Math.max(...a.items.map(x=>Number(x.stock))));
+  const list=grouped.filter(s=>(sel==='all'||s.brand===sel)&&Number.isFinite(s.lat)&&Number.isFinite(s.lng)&&bounds.contains([s.lat,s.lng])).map(s=>({...s,items:s.items.filter(x=>Number.isFinite(Number(x.stock))&&Number(x.stock)>0).sort((a,b)=>Number(b.stock)-Number(a.stock))})).filter(s=>s.items.length).sort((a,b)=>Math.max(...b.items.map(x=>Number(x.stock)))-Math.max(...a.items.map(x=>Number(x.stock))));
   markers.clearLayers();
   if(!list.length){root.innerHTML='<div class="empty">현재 지도 화면에서 재고가 1개 이상 확인된 포켓몬카드 상품을 찾지 못했습니다.</div>';return}
   for(const s of list)L.marker([s.lat,s.lng]).addTo(markers).bindPopup(`<b>${LABEL[s.brand]} ${s.name}</b><br>${s.items.length}종 재고 있음<br>${s.address||''}`);
@@ -104,28 +95,22 @@ function render(){
 }
 async function runBrand(brand,lat,lng,rows){
   diag[brand]={phase:'pending',text:'상품 검색 중'};statusBox(activeBrands());
-  let ps=[],searchFail=0,lastSearchError='';
-  const terms=brand==='GS25'?TERMS:['포켓몬카드','포켓몬확장팩'];
+  let ps=[],searchFail=0,lastSearchError='';const terms=brand==='GS25'?TERMS:['포켓몬카드','포켓몬확장팩'];
   for(const t of terms){try{ps.push(...await searchProducts(brand,t))}catch(e){searchFail++;lastSearchError=e.message||String(e)}}
   const seen=new Set();ps=ps.filter(p=>{const k=p.name+'|'+p.code;if(seen.has(k))return false;seen.add(k);return isTCG(p.name)});
-  if(brand==='7ELEVEN'&&ps.length===0){diag[brand]={phase:'error',text:`현재 조회 불가 · ${lastSearchError||'상품 API 오류'}`};statusBox(activeBrands());return}
-  if(!ps.length){diag[brand]={phase:searchFail===terms.length?'error':'ok',text:searchFail===terms.length?`상품 검색 실패 · ${lastSearchError}`:'TCG 상품 0종'};statusBox(activeBrands());return}
-  diag[brand]={phase:'pending',text:`TCG 상품 ${ps.length}종 · 재고 조회 중`};statusBox(activeBrands());
-  let ok=0,fail=0,stores=0,lastInvError='';
-  const targets=ps.slice(0,30);
-  const concurrency=brand==='CU'?6:brand==='emart24'?4:3;
-  await mapLimit(targets,concurrency,async p=>{
-    try{const j=await inventory(brand,p,lat,lng);const ss=parseStores(brand,j);addRows(rows,brand,p,ss);ok++;stores+=ss.length}
-    catch(e){fail++;lastInvError=e.message||String(e)}
-  });
-  diag[brand]={phase:ok?'ok':'error',text:`상품 ${ps.length}종 · 재고조회 ${ok}건 성공${fail?' / '+fail+'건 실패':''} · 응답매장 ${stores}건${!ok&&lastInvError?' · '+lastInvError:''}`};statusBox(activeBrands())
+  if(brand==='7ELEVEN'&&ps.length===0){diag[brand]={phase:'error',text:'현재 조회 불가'};statusBox(activeBrands());return}
+  if(!ps.length){diag[brand]={phase:searchFail===terms.length?'error':'ok',text:searchFail===terms.length?'상품 검색 실패':'포켓몬카드 상품 없음'};statusBox(activeBrands());return}
+  diag[brand]={phase:'pending',text:`포켓몬카드 ${ps.length}종 · 재고 확인 중`};statusBox(activeBrands());
+  let ok=0,fail=0,stores=0;const targets=ps.slice(0,30);const concurrency=brand==='CU'?6:brand==='emart24'?2:3;
+  await mapLimit(targets,concurrency,async p=>{try{const j=await inventory(brand,p,lat,lng);const ss=parseStores(brand,j);addRows(rows,brand,p,ss);ok++;stores+=ss.length}catch(e){fail++}});
+  const visibleStores=group(rows).filter(s=>s.brand===brand&&s.items.some(x=>Number.isFinite(Number(x.stock))&&Number(x.stock)>0)).length;
+  if(ok){diag[brand]={phase:'ok',text:`조회 완료 · ${ok}/${ps.length}상품 확인${visibleStores?` · 재고 매장 ${visibleStores}곳`:''}`}}
+  else{diag[brand]={phase:'error',text:'현재 재고 조회 불가'}}
+  statusBox(activeBrands())
 }
 async function refresh(){
-  const btn=document.getElementById('refresh'),brands=activeBrands(),c=map.getCenter(),rows=[];
-  btn.disabled=true;btn.textContent='조회 중...';diag={};for(const b of brands)diag[b]={phase:'pending',text:'대기 중'};statusBox(brands);
-  document.getElementById('status').textContent='조회 중';document.getElementById('stores').innerHTML='<div class="empty">편의점의 포켓몬카드 상품과 재고를 확인하고 있습니다.</div>';
-  await Promise.allSettled(brands.map(b=>runBrand(b,c.lat,c.lng,rows)));
-  grouped=group(rows);document.getElementById('status').textContent=`${grouped.filter(s=>s.items.some(x=>Number.isFinite(Number(x.stock))&&Number(x.stock)>0)).length}개 매장 재고 있음`;render();btn.disabled=false;btn.textContent='이 지역 포켓몬카드 재고 조회'
+  const btn=document.getElementById('refresh'),brands=activeBrands(),c=map.getCenter(),rows=[];btn.disabled=true;btn.textContent='조회 중...';diag={};for(const b of brands)diag[b]={phase:'pending',text:'대기 중'};statusBox(brands);document.getElementById('status').textContent='조회 중';document.getElementById('stores').innerHTML='<div class="empty">편의점의 포켓몬카드 상품과 재고를 확인하고 있습니다.</div>';
+  await Promise.allSettled(brands.map(b=>runBrand(b,c.lat,c.lng,rows)));grouped=group(rows);document.getElementById('status').textContent=`${grouped.filter(s=>s.items.some(x=>Number.isFinite(Number(x.stock))&&Number(x.stock)>0)).length}개 매장 재고 있음`;render();btn.disabled=false;btn.textContent='이 지역 포켓몬카드 재고 조회'
 }
 function moveTo(lat,lng,z=15){map.setView([lat,lng],z)}
 document.querySelectorAll('.quick button[data-lat]').forEach(b=>b.onclick=()=>moveTo(+b.dataset.lat,+b.dataset.lng));

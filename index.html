@@ -10,14 +10,14 @@
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
 .wrap{max-width:1140px;margin:auto;padding:24px 16px 56px}.hero{background:linear-gradient(135deg,#111827,#263f84);color:#fff;border-radius:24px;padding:26px}.eyebrow{font-size:12px;letter-spacing:.12em;opacity:.7}.hero h1{margin:7px 0;font-size:32px}.hero p{margin:0;opacity:.82}
 .toolbar{display:grid;grid-template-columns:1.15fr .7fr .9fr;gap:12px;margin:16px 0}.panel,.brand-status,.store{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px}label{display:block;font-size:12px;color:var(--muted);margin-bottom:7px}input,select,button{width:100%;border:1px solid var(--line);background:#fff;border-radius:12px;padding:11px 12px;font-size:14px}button{cursor:pointer;font-weight:700}.primary{background:var(--accent);color:#fff;border:none}.quick{display:flex;gap:8px;margin-top:8px}.quick button{padding:9px;font-size:12px}
-.status-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:12px 0 16px}.brand-status strong{display:block;font-size:13px;margin-bottom:4px}.brand-status span{font-size:12px;color:var(--muted);line-height:1.45}.ok{border-color:#bfe8d7}.err{border-color:#f2c7c3}.pending{border-color:#cdd8ff}
+.status-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:12px 0 16px}.brand-status strong{display:block;font-size:13px;margin-bottom:4px}.brand-status span{font-size:12px;color:var(--muted);line-height:1.45;word-break:break-word}.ok{border-color:#bfe8d7}.err{border-color:#f2c7c3}.pending{border-color:#cdd8ff}
 #map{height:480px;border-radius:20px;border:1px solid var(--line);overflow:hidden}.mapbox{position:relative}.map-status{position:absolute;left:12px;bottom:12px;z-index:500;background:rgba(255,255,255,.96);padding:9px 11px;border-radius:12px;border:1px solid var(--line);font-size:12px}
 .section-title{display:flex;justify-content:space-between;align-items:end;margin:24px 0 12px}.section-title h2{margin:0;font-size:20px}.section-title span{font-size:12px;color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.store h3{margin:0 0 4px;font-size:18px}.meta{font-size:12px;color:var(--muted);line-height:1.5}.item{display:grid;grid-template-columns:1fr auto;gap:10px;padding:12px 0;border-top:1px solid var(--line);align-items:center}.item:first-of-type{margin-top:12px}.item-name{font-weight:700;font-size:14px}.item-sub{font-size:11px;color:var(--muted);margin-top:3px}.qty{font-size:21px;font-weight:800}.badge{display:inline-flex;border-radius:999px;padding:5px 8px;font-size:10px;font-weight:700;margin-left:6px}.good{background:#e8f8f0;color:#087a54}.empty{grid-column:1/-1;background:#fff;border:1px dashed #cbd0db;border-radius:18px;padding:30px;text-align:center;color:var(--muted)}.note{margin-top:22px;font-size:12px;line-height:1.65;color:var(--muted)}
 @media(max-width:760px){.toolbar,.grid,.status-grid{grid-template-columns:1fr}.hero h1{font-size:27px}#map{height:420px}.quick{flex-wrap:wrap}.quick button{flex:1 1 30%}}
 </style>
 </head>
 <body><div class="wrap">
-<section class="hero"><div class="eyebrow">LIVE TEST v1.5</div><h1>Pokémon 카드 재고 레이더</h1><p>재고가 실제로 1개 이상 확인된 포켓몬카드 상품만 표시합니다.</p></section>
+<section class="hero"><div class="eyebrow">LIVE TEST v1.6 DIAGNOSTIC</div><h1>Pokémon 카드 재고 레이더</h1><p>재고가 실제로 1개 이상 확인된 포켓몬카드 상품만 표시합니다.</p></section>
 <section class="toolbar">
 <div class="panel"><label>지역 검색</label><input id="place" placeholder="예: 강남역, 잠실, 하남 감일동"/><div class="quick"><button data-lat="37.4765" data-lng="126.9638">낙성대</button><button data-lat="37.5086" data-lng="127.1607">감일동</button><button id="me">내 위치</button></div></div>
 <div class="panel"><label>편의점</label><select id="brand"><option value="all">전체</option><option value="GS25">GS25</option><option value="emart24">이마트24</option><option value="CU">CU</option><option value="7ELEVEN">세븐일레븐</option></select></div>
@@ -98,14 +98,14 @@ async function runBrand(brand,lat,lng,rows){
   let ps=[],searchFail=0,lastSearchError='';const terms=brand==='GS25'?TERMS:['포켓몬카드','포켓몬확장팩'];
   for(const t of terms){try{ps.push(...await searchProducts(brand,t))}catch(e){searchFail++;lastSearchError=e.message||String(e)}}
   const seen=new Set();ps=ps.filter(p=>{const k=p.name+'|'+p.code;if(seen.has(k))return false;seen.add(k);return isTCG(p.name)});
-  if(brand==='7ELEVEN'&&ps.length===0){diag[brand]={phase:'error',text:'현재 조회 불가'};statusBox(activeBrands());return}
+  if(brand==='7ELEVEN'&&ps.length===0){diag[brand]={phase:'error',text:lastSearchError?`상품검색 오류 · ${lastSearchError}`:'상품검색 결과 0건'};statusBox(activeBrands());return}
   if(!ps.length){diag[brand]={phase:searchFail===terms.length?'error':'ok',text:searchFail===terms.length?'상품 검색 실패':'포켓몬카드 상품 없음'};statusBox(activeBrands());return}
   diag[brand]={phase:'pending',text:`포켓몬카드 ${ps.length}종 · 재고 확인 중`};statusBox(activeBrands());
-  let ok=0,fail=0,stores=0;const targets=ps.slice(0,30);const concurrency=brand==='CU'?6:brand==='emart24'?2:3;
-  await mapLimit(targets,concurrency,async p=>{try{const j=await inventory(brand,p,lat,lng);const ss=parseStores(brand,j);addRows(rows,brand,p,ss);ok++;stores+=ss.length}catch(e){fail++}});
+  let ok=0,fail=0,stores=0,lastInventoryError='';const targets=ps.slice(0,30);const concurrency=brand==='CU'?6:brand==='emart24'?2:3;
+  await mapLimit(targets,concurrency,async p=>{try{const j=await inventory(brand,p,lat,lng);const ss=parseStores(brand,j);addRows(rows,brand,p,ss);ok++;stores+=ss.length}catch(e){fail++;lastInventoryError=e.message||String(e)}});
   const visibleStores=group(rows).filter(s=>s.brand===brand&&s.items.some(x=>Number.isFinite(Number(x.stock))&&Number(x.stock)>0)).length;
   if(ok){diag[brand]={phase:'ok',text:`조회 완료 · ${ok}/${ps.length}상품 확인${visibleStores?` · 재고 매장 ${visibleStores}곳`:''}`}}
-  else{diag[brand]={phase:'error',text:'현재 재고 조회 불가'}}
+  else{diag[brand]={phase:'error',text:brand==='7ELEVEN'&&lastInventoryError?`재고조회 오류 · ${lastInventoryError}`:'현재 재고 조회 불가'}}
   statusBox(activeBrands())
 }
 async function refresh(){

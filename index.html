@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pokémon 30th 재고 레이더</title>
+  <meta name="description" content="포켓몬카드 30th CELEBRATION 재고 레이더 프로토타입" />
+  <style>
+    :root{--bg:#f6f7fb;--card:#fff;--text:#14161a;--muted:#6b7280;--line:#e7e9ee;--good:#0f9f6e;--warn:#c47a00;--hot:#d92d20;--accent:#365cf5}
+    *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
+    .wrap{max-width:980px;margin:0 auto;padding:28px 18px 56px}.hero{background:linear-gradient(135deg,#111827,#243b7a);color:#fff;border-radius:24px;padding:28px;box-shadow:0 14px 40px rgba(17,24,39,.18)}
+    .eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;opacity:.72}.hero h1{margin:8px 0 8px;font-size:32px;line-height:1.15}.hero p{margin:0;opacity:.8;line-height:1.6}.toolbar{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:12px;margin:18px 0}
+    .panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 6px 20px rgba(17,24,39,.05)} label{display:block;font-size:12px;color:var(--muted);margin-bottom:8px} select,button{width:100%;border:1px solid var(--line);background:#fff;border-radius:12px;padding:12px 14px;font-size:14px} button{cursor:pointer;font-weight:700}.primary{background:var(--accent);color:#fff;border:none}.section-title{display:flex;justify-content:space-between;align-items:end;margin:26px 0 12px}.section-title h2{margin:0;font-size:20px}.section-title span{font-size:12px;color:var(--muted)}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.store{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px}.row{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.store h3{margin:0 0 5px;font-size:17px}.meta{font-size:12px;color:var(--muted)}.stock{font-size:28px;font-weight:800;white-space:nowrap}.badge{display:inline-flex;align-items:center;border-radius:999px;padding:6px 9px;font-size:11px;font-weight:700;margin-top:10px}.good{background:#e9f8f1;color:#087a54}.warn{background:#fff5dc;color:#9b6200}.hot{background:#ffe9e7;color:#b42318}.history{margin-top:14px;padding-top:14px;border-top:1px solid var(--line);font-size:13px;color:#414750;line-height:1.7}.empty{grid-column:1/-1;background:var(--card);border:1px dashed #cbd0db;border-radius:18px;padding:34px;text-align:center;color:var(--muted)}
+    .online{display:grid;gap:12px}.online-card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;justify-content:space-between;gap:16px;align-items:center}.price{font-weight:800;font-size:19px}.note{margin-top:28px;font-size:12px;line-height:1.6;color:var(--muted)}
+    @media(max-width:720px){.toolbar,.grid{grid-template-columns:1fr}.hero h1{font-size:27px}.online-card{align-items:flex-start;flex-direction:column}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <section class="hero">
+    <div class="eyebrow">Prototype v0.1</div>
+    <h1>Pokémon 30th 재고 레이더</h1>
+    <p>낙성대·봉천동 / 감일동 중심으로 GS25·이마트24 재고를 빠르게 판단하기 위한 프로토타입입니다.</p>
+  </section>
+
+  <section class="toolbar">
+    <div class="panel"><label>지역</label><select id="area"><option value="naksungdae">낙성대 · 봉천동</option><option value="gamil">하남 감일동</option></select></div>
+    <div class="panel"><label>편의점</label><select id="brand"><option value="all">전체</option><option value="GS25">GS25</option><option value="emart24">이마트24</option></select></div>
+    <div class="panel"><label>상품</label><button class="primary" id="refresh">30th CELEBRATION 조회</button></div>
+  </section>
+
+  <div class="section-title"><h2>주변 재고</h2><span id="updated">데모 데이터</span></div>
+  <section id="stores" class="grid"></section>
+
+  <div class="section-title"><h2>온라인 정가·살 만한 가격</h2><span>실재고 연결 전 데모</span></div>
+  <section class="online">
+    <div class="online-card"><div><strong>Pokémon Store</strong><div class="meta">공식 판매 / 추첨·추가판매 공지 감시 대상</div></div><div class="price">공식가 우선</div></div>
+    <div class="online-card"><div><strong>토이저러스 / 롯데ON</strong><div class="meta">30th CELEBRATION 공식 판매 페이지 감시 대상</div></div><div class="price">70,000원 기준</div></div>
+  </section>
+
+  <p class="note">현재 버전은 화면과 판단 로직을 먼저 확인하기 위한 프로토타입입니다. 실제 편의점 재고 API는 아직 연결하지 않았습니다. 따라서 아래 수량은 예시이며 출발 판단에 사용하면 안 됩니다.</p>
+</div>
+<script>
+const demo = {
+  naksungdae:[
+    {brand:'GS25',name:'GS25 낙성대 예시점',dist:'0.6 km',stock:12,history:['07:52 14개','08:06 14개','08:14 12개'],status:'hot',label:'🔥 재고 감소 — 판매 시작 가능성'},
+    {brand:'emart24',name:'이마트24 봉천 예시점',dist:'1.1 km',stock:3,history:['08:02 4개','08:17 3개'],status:'good',label:'재고 변동 확인'}
+  ],
+  gamil:[
+    {brand:'GS25',name:'GS25 감일 예시점',dist:'0.8 km',stock:14,history:['07:35 14개','07:58 14개'],status:'warn',label:'⚠️ 선반영 가능성 — 출발 보류'},
+    {brand:'emart24',name:'이마트24 감일 예시점',dist:'1.4 km',stock:0,history:['08:04 0개'],status:'warn',label:'현재 재고 없음'}
+  ]
+};
+function render(){
+  const area=document.getElementById('area').value, brand=document.getElementById('brand').value;
+  const list=demo[area].filter(x=>brand==='all'||x.brand===brand), root=document.getElementById('stores');
+  if(!list.length){root.innerHTML='<div class="empty">표시할 매장이 없습니다.</div>';return}
+  root.innerHTML=list.map(x=>`<article class="store"><div class="row"><div><h3>${x.name}</h3><div class="meta">${x.brand} · ${x.dist}</div></div><div class="stock">${x.stock}개</div></div><span class="badge ${x.status}">${x.label}</span><div class="history"><strong>재고 변화</strong><br>${x.history.join(' → ')}</div></article>`).join('');
+}
+document.getElementById('area').addEventListener('change',render);document.getElementById('brand').addEventListener('change',render);document.getElementById('refresh').addEventListener('click',()=>{document.getElementById('updated').textContent='방금 갱신 · 데모 데이터';render()});render();
+</script>
+</body>
+</html>

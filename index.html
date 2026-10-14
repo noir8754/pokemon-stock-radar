@@ -1,64 +1,62 @@
 <!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Pokémon 30th 재고 레이더</title>
-  <meta name="description" content="포켓몬카드 30th CELEBRATION 재고 레이더 프로토타입" />
-  <style>
-    :root{--bg:#f6f7fb;--card:#fff;--text:#14161a;--muted:#6b7280;--line:#e7e9ee;--good:#0f9f6e;--warn:#c47a00;--hot:#d92d20;--accent:#365cf5}
-    *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
-    .wrap{max-width:980px;margin:0 auto;padding:28px 18px 56px}.hero{background:linear-gradient(135deg,#111827,#243b7a);color:#fff;border-radius:24px;padding:28px;box-shadow:0 14px 40px rgba(17,24,39,.18)}
-    .eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;opacity:.72}.hero h1{margin:8px 0 8px;font-size:32px;line-height:1.15}.hero p{margin:0;opacity:.8;line-height:1.6}.toolbar{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:12px;margin:18px 0}
-    .panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 6px 20px rgba(17,24,39,.05)} label{display:block;font-size:12px;color:var(--muted);margin-bottom:8px} select,button{width:100%;border:1px solid var(--line);background:#fff;border-radius:12px;padding:12px 14px;font-size:14px} button{cursor:pointer;font-weight:700}.primary{background:var(--accent);color:#fff;border:none}.section-title{display:flex;justify-content:space-between;align-items:end;margin:26px 0 12px}.section-title h2{margin:0;font-size:20px}.section-title span{font-size:12px;color:var(--muted)}
-    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.store{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px}.row{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.store h3{margin:0 0 5px;font-size:17px}.meta{font-size:12px;color:var(--muted)}.stock{font-size:28px;font-weight:800;white-space:nowrap}.badge{display:inline-flex;align-items:center;border-radius:999px;padding:6px 9px;font-size:11px;font-weight:700;margin-top:10px}.good{background:#e9f8f1;color:#087a54}.warn{background:#fff5dc;color:#9b6200}.hot{background:#ffe9e7;color:#b42318}.history{margin-top:14px;padding-top:14px;border-top:1px solid var(--line);font-size:13px;color:#414750;line-height:1.7}.empty{grid-column:1/-1;background:var(--card);border:1px dashed #cbd0db;border-radius:18px;padding:34px;text-align:center;color:var(--muted)}
-    .online{display:grid;gap:12px}.online-card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;justify-content:space-between;gap:16px;align-items:center}.price{font-weight:800;font-size:19px}.note{margin-top:28px;font-size:12px;line-height:1.6;color:var(--muted)}
-    @media(max-width:720px){.toolbar,.grid{grid-template-columns:1fr}.hero h1{font-size:27px}.online-card{align-items:flex-start;flex-direction:column}}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Pokémon 30th 재고 레이더</title>
+<meta name="description" content="포켓몬카드 30th CELEBRATION 재고 레이더" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIINfQ3ynq8G+WzjMZ5x9vSpg8GgkP1m8d0=" crossorigin="" />
+<style>
+:root{--bg:#f6f7fb;--card:#fff;--text:#14161a;--muted:#6b7280;--line:#e7e9ee;--good:#0f9f6e;--warn:#c47a00;--hot:#d92d20;--accent:#365cf5}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
+.wrap{max-width:1100px;margin:0 auto;padding:24px 16px 56px}.hero{background:linear-gradient(135deg,#111827,#243b7a);color:#fff;border-radius:24px;padding:26px;box-shadow:0 14px 40px rgba(17,24,39,.16)}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;opacity:.72}.hero h1{margin:8px 0;font-size:32px}.hero p{margin:0;opacity:.82;line-height:1.55}.toolbar{display:grid;grid-template-columns:1.3fr .8fr .8fr;gap:12px;margin:16px 0}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 6px 20px rgba(17,24,39,.04)}label{display:block;font-size:12px;color:var(--muted);margin-bottom:7px}input,select,button{width:100%;border:1px solid var(--line);background:#fff;border-radius:12px;padding:11px 12px;font-size:14px}button{cursor:pointer;font-weight:700}.primary{background:var(--accent);color:#fff;border:none}.quick{display:flex;gap:8px;margin-top:8px}.quick button{padding:9px;font-size:12px}
+#map{height:500px;border-radius:20px;border:1px solid var(--line);overflow:hidden;background:#e5e7eb}.mapbox{position:relative}.map-status{position:absolute;left:12px;bottom:12px;z-index:500;background:rgba(255,255,255,.95);padding:9px 11px;border-radius:12px;border:1px solid var(--line);font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.08)}
+.section-title{display:flex;justify-content:space-between;align-items:end;margin:24px 0 12px}.section-title h2{margin:0;font-size:20px}.section-title span{font-size:12px;color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.store{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px}.row{display:flex;justify-content:space-between;gap:12px}.store h3{margin:0 0 4px;font-size:17px}.meta{font-size:12px;color:var(--muted)}.stock{font-size:28px;font-weight:800;white-space:nowrap}.badge{display:inline-flex;border-radius:999px;padding:6px 9px;font-size:11px;font-weight:700;margin-top:10px}.good{background:#e9f8f1;color:#087a54}.warn{background:#fff5dc;color:#9b6200}.hot{background:#ffe9e7;color:#b42318}.history{margin-top:14px;padding-top:14px;border-top:1px solid var(--line);font-size:13px;line-height:1.7;color:#414750}.empty{grid-column:1/-1;background:#fff;border:1px dashed #cbd0db;border-radius:18px;padding:28px;text-align:center;color:var(--muted)}.note{margin-top:24px;font-size:12px;line-height:1.65;color:var(--muted)}
+@media(max-width:760px){.toolbar,.grid{grid-template-columns:1fr}.hero h1{font-size:27px}#map{height:430px}.quick{flex-wrap:wrap}.quick button{flex:1 1 30%}}
+</style>
 </head>
 <body>
 <div class="wrap">
-  <section class="hero">
-    <div class="eyebrow">Prototype v0.1</div>
-    <h1>Pokémon 30th 재고 레이더</h1>
-    <p>낙성대·봉천동 / 감일동 중심으로 GS25·이마트24 재고를 빠르게 판단하기 위한 프로토타입입니다.</p>
-  </section>
+<section class="hero"><div class="eyebrow">Prototype v0.2</div><h1>Pokémon 30th 재고 레이더</h1><p>지도를 자유롭게 움직여 원하는 지역을 보고, 그 화면 주변의 편의점 재고를 조회하는 방식으로 확장 중입니다.</p></section>
 
-  <section class="toolbar">
-    <div class="panel"><label>지역</label><select id="area"><option value="naksungdae">낙성대 · 봉천동</option><option value="gamil">하남 감일동</option></select></div>
-    <div class="panel"><label>편의점</label><select id="brand"><option value="all">전체</option><option value="GS25">GS25</option><option value="emart24">이마트24</option></select></div>
-    <div class="panel"><label>상품</label><button class="primary" id="refresh">30th CELEBRATION 조회</button></div>
-  </section>
+<section class="toolbar">
+<div class="panel"><label>지역 검색</label><input id="place" placeholder="예: 강남역, 잠실, 하남 감일동" /><div class="quick"><button data-lat="37.4765" data-lng="126.9638">낙성대</button><button data-lat="37.5086" data-lng="127.1607">감일동</button><button id="me">내 위치</button></div></div>
+<div class="panel"><label>편의점</label><select id="brand"><option value="all">전체</option><option value="GS25">GS25</option><option value="emart24">이마트24</option></select></div>
+<div class="panel"><label>현재 지도 영역</label><button class="primary" id="refresh">이 지역 재고 조회</button></div>
+</section>
 
-  <div class="section-title"><h2>주변 재고</h2><span id="updated">데모 데이터</span></div>
-  <section id="stores" class="grid"></section>
+<div class="mapbox"><div id="map"></div><div class="map-status" id="mapStatus">지도를 움직인 뒤 조회하세요</div></div>
 
-  <div class="section-title"><h2>온라인 정가·살 만한 가격</h2><span>실재고 연결 전 데모</span></div>
-  <section class="online">
-    <div class="online-card"><div><strong>Pokémon Store</strong><div class="meta">공식 판매 / 추첨·추가판매 공지 감시 대상</div></div><div class="price">공식가 우선</div></div>
-    <div class="online-card"><div><strong>토이저러스 / 롯데ON</strong><div class="meta">30th CELEBRATION 공식 판매 페이지 감시 대상</div></div><div class="price">70,000원 기준</div></div>
-  </section>
-
-  <p class="note">현재 버전은 화면과 판단 로직을 먼저 확인하기 위한 프로토타입입니다. 실제 편의점 재고 API는 아직 연결하지 않았습니다. 따라서 아래 수량은 예시이며 출발 판단에 사용하면 안 됩니다.</p>
+<div class="section-title"><h2>현재 화면 주변 재고</h2><span id="updated">데모 데이터</span></div>
+<section id="stores" class="grid"></section>
+<p class="note"><strong>중요:</strong> 현재 지도와 검색 기능은 실제로 작동하지만, 매장 재고 수량은 아직 예시 데이터입니다. 실제 GS25·이마트24 재고 연결 전에는 구매 판단에 사용하지 마세요.</p>
 </div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
-const demo = {
-  naksungdae:[
-    {brand:'GS25',name:'GS25 낙성대 예시점',dist:'0.6 km',stock:12,history:['07:52 14개','08:06 14개','08:14 12개'],status:'hot',label:'🔥 재고 감소 — 판매 시작 가능성'},
-    {brand:'emart24',name:'이마트24 봉천 예시점',dist:'1.1 km',stock:3,history:['08:02 4개','08:17 3개'],status:'good',label:'재고 변동 확인'}
-  ],
-  gamil:[
-    {brand:'GS25',name:'GS25 감일 예시점',dist:'0.8 km',stock:14,history:['07:35 14개','07:58 14개'],status:'warn',label:'⚠️ 선반영 가능성 — 출발 보류'},
-    {brand:'emart24',name:'이마트24 감일 예시점',dist:'1.4 km',stock:0,history:['08:04 0개'],status:'warn',label:'현재 재고 없음'}
-  ]
-};
-function render(){
-  const area=document.getElementById('area').value, brand=document.getElementById('brand').value;
-  const list=demo[area].filter(x=>brand==='all'||x.brand===brand), root=document.getElementById('stores');
-  if(!list.length){root.innerHTML='<div class="empty">표시할 매장이 없습니다.</div>';return}
-  root.innerHTML=list.map(x=>`<article class="store"><div class="row"><div><h3>${x.name}</h3><div class="meta">${x.brand} · ${x.dist}</div></div><div class="stock">${x.stock}개</div></div><span class="badge ${x.status}">${x.label}</span><div class="history"><strong>재고 변화</strong><br>${x.history.join(' → ')}</div></article>`).join('');
-}
-document.getElementById('area').addEventListener('change',render);document.getElementById('brand').addEventListener('change',render);document.getElementById('refresh').addEventListener('click',()=>{document.getElementById('updated').textContent='방금 갱신 · 데모 데이터';render()});render();
+const map=L.map('map',{zoomControl:true}).setView([37.5008,127.0257],12);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
+const markers=L.layerGroup().addTo(map);
+const demo=[
+{brand:'GS25',name:'GS25 낙성대 예시점',lat:37.4774,lng:126.9618,stock:12,history:['07:52 14개','08:06 14개','08:14 12개'],status:'hot',label:'🔥 재고 감소 — 판매 시작 가능성'},
+{brand:'emart24',name:'이마트24 봉천 예시점',lat:37.4820,lng:126.9525,stock:3,history:['08:02 4개','08:17 3개'],status:'good',label:'재고 변동 확인'},
+{brand:'GS25',name:'GS25 감일 예시점',lat:37.5078,lng:127.1602,stock:14,history:['07:35 14개','07:58 14개'],status:'warn',label:'⚠️ 선반영 가능성 — 출발 보류'},
+{brand:'emart24',name:'이마트24 감일 예시점',lat:37.5120,lng:127.1664,stock:0,history:['08:04 0개'],status:'warn',label:'현재 재고 없음'}
+];
+function distanceKm(a,b,c,d){const R=6371,toRad=x=>x*Math.PI/180;const dLat=toRad(c-a),dLon=toRad(d-b);const q=Math.sin(dLat/2)**2+Math.cos(toRad(a))*Math.cos(toRad(c))*Math.sin(dLon/2)**2;return 2*R*Math.asin(Math.sqrt(q));}
+function render(){const brand=document.getElementById('brand').value,bounds=map.getBounds(),center=map.getCenter();const list=demo.filter(x=>bounds.contains([x.lat,x.lng])&&(brand==='all'||x.brand===brand)).map(x=>({...x,dist:distanceKm(center.lat,center.lng,x.lat,x.lng)})).sort((a,b)=>a.dist-b.dist);const root=document.getElementById('stores');markers.clearLayers();
+list.forEach(x=>L.marker([x.lat,x.lng]).addTo(markers).bindPopup(`<b>${x.name}</b><br>${x.brand} · 예시 재고 ${x.stock}개`));
+root.innerHTML=list.length?list.map(x=>`<article class="store"><div class="row"><div><h3>${x.name}</h3><div class="meta">${x.brand} · 지도 중심에서 ${x.dist.toFixed(1)} km</div></div><div class="stock">${x.stock}개</div></div><span class="badge ${x.status}">${x.label}</span><div class="history"><strong>재고 변화</strong><br>${x.history.join(' → ')}</div></article>`).join(''):'<div class="empty">현재 지도 화면 안에는 예시 매장이 없습니다. 지도를 낙성대 또는 감일동 쪽으로 이동해보세요.</div>';
+document.getElementById('updated').textContent='방금 갱신 · 데모 데이터';}
+function moveTo(lat,lng,z=15){map.setView([lat,lng],z);setTimeout(render,250)}
+document.querySelectorAll('.quick button[data-lat]').forEach(b=>b.addEventListener('click',()=>moveTo(+b.dataset.lat,+b.dataset.lng)));
+document.getElementById('me').addEventListener('click',()=>{if(!navigator.geolocation){alert('이 브라우저에서는 위치 기능을 사용할 수 없습니다.');return}navigator.geolocation.getCurrentPosition(p=>moveTo(p.coords.latitude,p.coords.longitude),()=>alert('위치 권한을 허용하면 현재 위치로 이동할 수 있습니다.'))});
+document.getElementById('refresh').addEventListener('click',render);document.getElementById('brand').addEventListener('change',render);
+map.on('moveend',()=>{const c=map.getCenter();document.getElementById('mapStatus').textContent=`지도 중심 ${c.lat.toFixed(4)}, ${c.lng.toFixed(4)} · 조회 버튼을 누르세요`;});
+async function searchPlace(){const q=document.getElementById('place').value.trim();if(!q)return;const btn=document.getElementById('place');btn.disabled=true;try{const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=kr&q='+encodeURIComponent(q));const data=await r.json();if(!data.length){alert('장소를 찾지 못했습니다.');return}moveTo(+data[0].lat,+data[0].lon,15)}catch(e){alert('장소 검색에 실패했습니다. 잠시 후 다시 시도해주세요.')}finally{btn.disabled=false}}
+document.getElementById('place').addEventListener('keydown',e=>{if(e.key==='Enter')searchPlace()});
+render();
 </script>
 </body>
 </html>

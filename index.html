@@ -17,7 +17,7 @@
 </style>
 </head>
 <body><div class="wrap">
-<section class="hero"><div class="eyebrow">LIVE TEST v1.0</div><h1>Pokémon 카드 재고 레이더</h1><p>GS25·이마트24·CU·세븐일레븐을 브랜드별 방식에 맞춰 조회합니다.</p></section>
+<section class="hero"><div class="eyebrow">LIVE TEST v1.1</div><h1>Pokémon 카드 재고 레이더</h1><p>GS25·이마트24·CU·세븐일레븐을 자체 Cloudflare 백엔드를 거쳐 조회합니다.</p></section>
 <section class="toolbar">
 <div class="panel"><label>지역 검색</label><input id="place" placeholder="예: 강남역, 잠실, 하남 감일동"/><div class="quick"><button data-lat="37.4765" data-lng="126.9638">낙성대</button><button data-lat="37.5086" data-lng="127.1607">감일동</button><button id="me">내 위치</button></div></div>
 <div class="panel"><label>편의점</label><select id="brand"><option value="all">전체</option><option value="GS25">GS25</option><option value="emart24">이마트24</option><option value="CU">CU</option><option value="7ELEVEN">세븐일레븐</option></select></div>
@@ -31,7 +31,7 @@
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script>
-const API='https://mcp.aka.page';
+const API='https://pokemon-stock-radar-api.young8754-f51.workers.dev';
 const ALL=['GS25','emart24','CU','7ELEVEN'];
 const LABEL={GS25:'GS25',emart24:'이마트24',CU:'CU','7ELEVEN':'세븐일레븐'};
 const TERMS=['포켓몬카드','포켓몬확장팩','포켓몬'];

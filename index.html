@@ -17,7 +17,7 @@
 </style>
 </head>
 <body><div class="wrap">
-<section class="hero"><div class="eyebrow">LIVE TEST v1.3</div><h1>Pokémon 카드 재고 레이더</h1><p>재고가 실제로 1개 이상 확인된 포켓몬카드 상품만 표시합니다.</p></section>
+<section class="hero"><div class="eyebrow">LIVE TEST v1.4</div><h1>Pokémon 카드 재고 레이더</h1><p>재고가 실제로 1개 이상 확인된 포켓몬카드 상품만 표시합니다.</p></section>
 <section class="toolbar">
 <div class="panel"><label>지역 검색</label><input id="place" placeholder="예: 강남역, 잠실, 하남 감일동"/><div class="quick"><button data-lat="37.4765" data-lng="126.9638">낙성대</button><button data-lat="37.5086" data-lng="127.1607">감일동</button><button id="me">내 위치</button></div></div>
 <div class="panel"><label>편의점</label><select id="brand"><option value="all">전체</option><option value="GS25">GS25</option><option value="emart24">이마트24</option><option value="CU">CU</option><option value="7ELEVEN">세븐일레븐</option></select></div>
@@ -75,7 +75,21 @@ function parseStores(brand,j){
 function addRows(rows,brand,p,ss){for(const s of ss)rows.push({brand,product:p,store:s})}
 function group(rows){const m=new Map();for(const r of rows){const key=r.brand+'|'+(r.store.code||r.store.name);if(!m.has(key))m.set(key,{brand:r.brand,...r.store,items:[]});const g=m.get(key),ik=r.product.name+'|'+r.product.code;if(!g.items.some(x=>x.key===ik))g.items.push({...r.product,key:ik,stock:r.store.stock})}return [...m.values()]}
 function activeBrands(){const v=document.getElementById('brand').value;return v==='all'?ALL:[v]}
-function statusBox(brands){document.getElementById('brandStatus').innerHTML=brands.map(b=>{const d=diag[b]||{phase:'pending',text:'대기 중'};return `<div class="brand-status ${d.phase==='ok'?'ok':d.phase==='error'?'err':'pending'}"><strong>${LABEL[b]}</strong><span>${d.text}</span></div>`}).join('')}
+function statusBox(brands){
+  const root=document.getElementById('brandStatus');
+  root.replaceChildren();
+  for(const b of brands){
+    const d=diag[b]||{phase:'pending',text:'대기 중'};
+    const card=document.createElement('div');
+    card.className='brand-status '+(d.phase==='ok'?'ok':d.phase==='error'?'err':'pending');
+    const strong=document.createElement('strong');
+    strong.textContent=LABEL[b];
+    const span=document.createElement('span');
+    span.textContent=String(d.text||'');
+    card.append(strong,span);
+    root.append(card);
+  }
+}
 async function mapLimit(items,limit,fn){let next=0;const workers=Array.from({length:Math.min(limit,items.length)},async()=>{while(next<items.length){const i=next++;await fn(items[i],i)}});await Promise.all(workers)}
 function render(){
   const root=document.getElementById('stores'),bounds=map.getBounds(),sel=document.getElementById('brand').value;

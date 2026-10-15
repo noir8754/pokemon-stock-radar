@@ -17,7 +17,7 @@
 </style>
 </head>
 <body><div class="wrap">
-<section class="hero"><div class="eyebrow">LIVE TEST v1.8</div><h1>Pokémon 카드 재고 레이더</h1><p>재고가 실제로 1개 이상 확인된 포켓몬카드 상품만 표시합니다.</p></section>
+<section class="hero"><div class="eyebrow">LIVE TEST v1.9 FAST</div><h1>Pokémon 카드 재고 레이더</h1><p>재고가 실제로 1개 이상 확인된 포켓몬카드 상품만 표시합니다.</p></section>
 <section class="toolbar">
 <div class="panel"><label>지역 검색</label><input id="place" placeholder="예: 강남역, 잠실, 하남 감일동"/><div class="quick"><button data-lat="37.4765" data-lng="126.9638">낙성대</button><button data-lat="37.5086" data-lng="127.1607">감일동</button><button id="me">내 위치</button></div></div>
 <div class="panel"><label>편의점</label><select id="brand"><option value="all">전체</option><option value="GS25">GS25</option><option value="emart24">이마트24</option><option value="CU">CU</option><option value="7ELEVEN">세븐일레븐</option></select></div>
@@ -41,7 +41,7 @@ const markers=L.layerGroup().addTo(map);
 let grouped=[],diag={};
 function qs(o){return new URLSearchParams(Object.entries(o).filter(([,v])=>v!==undefined&&v!==null&&v!==''))}
 function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
-async function get(path,p={},timeoutMs=12000){
+async function get(path,p={},timeoutMs=7000){
   const controller=new AbortController();
   const timer=setTimeout(()=>controller.abort(),timeoutMs);
   try{
@@ -49,10 +49,8 @@ async function get(path,p={},timeoutMs=12000){
     let j=null;try{j=await r.json()}catch{}
     if(!r.ok)throw new Error('HTTP '+r.status+(j?.error?.message?' · '+j.error.message:''));
     return j;
-  }catch(e){
-    if(e?.name==='AbortError')throw new Error('조회 시간 초과');
-    throw e;
-  }finally{clearTimeout(timer)}
+  }catch(e){if(e?.name==='AbortError')throw new Error('조회 시간 초과');throw e}
+  finally{clearTimeout(timer)}
 }
 function product(brand,p){return{brand,name:p.name||p.itemName||p.shortItemName||p.goodsName||p.productName||'상품',code:p.itemCode||p.pluCd||p.code||p.id||'',price:p.sellPrice??p.viewPrice??p.originPrice??p.price??null}}
 function isTCG(name){const s=(name||'').replace(/\s+/g,'').toLowerCase();if(/(교통카드|이즐|티머니|캐시비|ic칩|ic카드|카드케이스|케이스|슬리브|프로텍터|바인더|앨범|파일|홀더|지갑|스티커|키링|피규어|인형|문구|볼펜|초코|쿠키|음료|캔디|젤리|빵|우유|아이스크림|껌|스낵|과자|라면|주스|탄산|커피|사탕|초콜릿|파이)/i.test(s))return false;return /(확장팩|강화확장팩|부스터|스타터덱|스타트덱|구축덱|덱세트|스페셜세트|컬렉션세트|트레이너박스|pokemon.*card|포켓몬.*카드|30th.*(팩|박스|box|celebration)|celebration)/i.test(s)}
@@ -60,29 +58,26 @@ function coords(s){return{lat:Number(s.latitude??s.lat),lng:Number(s.longitude??
 function baseStore(s){const c=coords(s);return{code:s.storeCode||s.bizNo||s.code||'',name:s.storeName||s.bizName||s.name||'매장',address:s.address||s.storeAddr||s.addr||'',phone:s.phone||s.tel||'',lat:c.lat,lng:c.lng}}
 function stockNum(...vals){for(const v of vals){if(v!==undefined&&v!==null&&v!==''&&Number.isFinite(Number(v)))return Number(v)}return null}
 async function searchProducts(brand,term){
-  if(brand==='GS25'){const j=await get('/api/gs25/products',{keyword:term,limit:40});return (j.data?.products||[]).map(x=>product(brand,x))}
-  if(brand==='emart24'){const j=await get('/api/emart24/products',{keyword:term,page:1,pageSize:40});return (j.data?.products||[]).map(x=>product(brand,x))}
-  if(brand==='CU'){const j=await get('/api/cu/inventory',{keyword:term,storeCheck:false,size:40});return (j.data?.inventory?.items||[]).map(x=>product(brand,x))}
-  if(brand==='7ELEVEN'){const j=await get('/api/seveneleven/products',{query:term,page:1,size:40});return (j.data?.products||j.data?.items||[]).map(x=>product(brand,x))}
+  if(brand==='GS25'){const j=await get('/api/gs25/products',{keyword:term,limit:40},5000);return (j.data?.products||[]).map(x=>product(brand,x))}
+  if(brand==='emart24'){const j=await get('/api/emart24/products',{keyword:term,page:1,pageSize:40},6000);return (j.data?.products||[]).map(x=>product(brand,x))}
+  if(brand==='CU'){const j=await get('/api/cu/inventory',{keyword:term,storeCheck:false,size:40},5000);return (j.data?.inventory?.items||[]).map(x=>product(brand,x))}
   return[]
 }
 async function inventory(brand,p,lat,lng){
   if(brand==='GS25'){
-    try{return await get('/api/gs25/inventory',{keyword:p.name,itemCode:p.code||undefined,lat,lng,storeLimit:50,timeoutMs:10000},12000)}
-    catch(first){try{return await get('/api/gs25/inventory',{keyword:p.name,lat,lng,storeLimit:50,timeoutMs:10000},12000)}catch(second){throw new Error(second.message||first.message)}}
+    try{return await get('/api/gs25/inventory',{keyword:p.name,itemCode:p.code||undefined,lat,lng,storeLimit:40,timeoutMs:7000},8000)}
+    catch(first){return get('/api/gs25/inventory',{keyword:p.name,lat,lng,storeLimit:40,timeoutMs:7000},8000)}
   }
   if(brand==='emart24'){
-    const params={pluCd:p.code||undefined,keyword:p.code?undefined:p.name,lat,lng,storeLimit:30};
-    try{return await get('/api/emart24/inventory',params,10000)}
-    catch(first){await sleep(650);try{return await get('/api/emart24/inventory',params,10000)}catch(second){throw new Error(second.message||first.message)}}
+    const params={pluCd:p.code||undefined,keyword:p.code?undefined:p.name,lat,lng,storeLimit:25};
+    try{return await get('/api/emart24/inventory',params,7000)}
+    catch(first){await sleep(250);return get('/api/emart24/inventory',params,6000)}
   }
-  if(brand==='CU')return get('/api/cu/inventory',{keyword:p.name,lat,lng,size:30,storeLimit:50},12000);
-  if(brand==='7ELEVEN')return get('/api/seveneleven/inventory',{keyword:p.name,lat,lng,storeLimit:50,timeoutMs:10000},12000);
+  if(brand==='CU')return get('/api/cu/inventory',{keyword:p.name,lat,lng,size:30,storeLimit:40},7000);
 }
 function parseStores(brand,j){
   if(brand==='GS25')return (j.data?.inventory?.stores||[]).map(s=>({...baseStore(s),stock:stockNum(s.realStockQuantity,s.stockQuantity,s.stock)}));
   if(brand==='CU')return (j.data?.nearbyStores?.stores||j.data?.inventory?.stores||[]).map(s=>({...baseStore(s),stock:stockNum(s.stock,s.stockQuantity,s.bizQty)}));
-  if(brand==='7ELEVEN')return (j.data?.inventory?.stores||j.data?.stores||[]).map(s=>({...baseStore(s),stock:stockNum(s.stockQuantity,s.stock,s.qty)}));
   if(brand==='emart24'){
     const near=new Map((j.data?.nearbyStores?.stores||[]).map(s=>[String(s.storeCode||s.bizNo||s.code),s]));
     return (j.data?.stores||[]).map(s=>{const k=String(s.bizNo||s.storeCode||s.code||'');const m={...(near.get(k)||{}),...s};return{...baseStore(m),stock:stockNum(s.bizQty,s.stockQuantity,s.stock,s.qty)}})
@@ -103,20 +98,18 @@ function render(){
   root.innerHTML=list.map(s=>`<article class="store"><h3>${LABEL[s.brand]} ${s.name}</h3><div class="meta">${s.address||'주소 정보 없음'}${s.phone?'<br>전화 '+s.phone:''}</div>${s.items.map(x=>`<div class="item"><div><div class="item-name">${x.name}</div><div class="item-sub">${x.code?'코드 '+x.code:''}${x.price!=null?' · '+Number(x.price).toLocaleString()+'원':''}</div></div><div><span class="qty">${Number(x.stock)}개</span><span class="badge good">재고</span></div></div>`).join('')}</article>`).join('')
 }
 async function runBrand(brand,lat,lng,rows){
+  if(brand==='7ELEVEN'){diag[brand]={phase:'error',text:'현재 조회 불가'};statusBox(activeBrands());return}
   diag[brand]={phase:'pending',text:'상품 검색 중'};statusBox(activeBrands());
   let ps=[],searchFail=0;const terms=brand==='GS25'?TERMS:['포켓몬카드','포켓몬확장팩'];
-  for(const t of terms){try{ps.push(...await searchProducts(brand,t))}catch(e){searchFail++}}
+  await Promise.all(terms.map(async t=>{try{ps.push(...await searchProducts(brand,t))}catch(e){searchFail++}}));
   const seen=new Set();ps=ps.filter(p=>{const k=p.name+'|'+p.code;if(seen.has(k))return false;seen.add(k);return isTCG(p.name)});
-  if(brand==='7ELEVEN'&&ps.length===0){diag[brand]={phase:'error',text:'현재 조회 불가'};statusBox(activeBrands());return}
   if(!ps.length){diag[brand]={phase:searchFail===terms.length?'error':'ok',text:searchFail===terms.length?'상품 검색 실패':'포켓몬카드 상품 없음'};statusBox(activeBrands());return}
   diag[brand]={phase:'pending',text:`포켓몬카드 ${ps.length}종 · 재고 확인 중`};statusBox(activeBrands());
-  let ok=0,fail=0;const targets=ps.slice(0,30);const concurrency=brand==='CU'?6:brand==='emart24'?2:3;
-  await mapLimit(targets,concurrency,async p=>{try{const j=await inventory(brand,p,lat,lng);const ss=parseStores(brand,j);addRows(rows,brand,p,ss);ok++}catch(e){fail++}});
+  let ok=0;const targets=ps.slice(0,30);const concurrency=brand==='CU'?10:brand==='emart24'?3:4;
+  await mapLimit(targets,concurrency,async p=>{try{const j=await inventory(brand,p,lat,lng);const ss=parseStores(brand,j);addRows(rows,brand,p,ss);ok++}catch(e){}});
   const visibleStores=group(rows).filter(s=>s.brand===brand&&s.items.some(x=>Number.isFinite(Number(x.stock))&&Number(x.stock)>0)).length;
-  if(ok){
-    const matched=brand==='GS25'?` · 확인 상품: ${ps.slice(0,3).map(p=>p.name).join(', ')}`:'';
-    diag[brand]={phase:'ok',text:`조회 완료 · ${ok}/${ps.length}상품 확인 · 재고 매장 ${visibleStores}곳${matched}`}
-  } else diag[brand]={phase:'error',text:'현재 재고 조회 불가'};
+  if(ok){const matched=brand==='GS25'?` · 확인 상품: ${ps.slice(0,3).map(p=>p.name).join(', ')}`:'';diag[brand]={phase:'ok',text:`조회 완료 · ${ok}/${ps.length}상품 확인 · 재고 매장 ${visibleStores}곳${matched}`}}
+  else diag[brand]={phase:'error',text:'현재 재고 조회 불가'};
   statusBox(activeBrands())
 }
 async function refresh(){

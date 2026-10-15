@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Pokémon 카드 재고 레이더</title>
+<title>Gotta Catch 'Em All! · Pokémon 카드 재고</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
 <style>
 :root{--bg:#f5f7fb;--card:#fff;--text:#151821;--muted:#727886;--line:#e5e8ef;--good:#0e9f6e;--bad:#c54a40;--accent:#315bea;--soft:#eef3ff}
@@ -13,11 +13,14 @@
 .status-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:12px 0 16px}.brand-status{min-height:68px}.brand-status strong{display:flex;align-items:center;gap:6px;font-size:13px;margin-bottom:5px}.brand-status span{font-size:12px;color:var(--muted);line-height:1.45;word-break:keep-all}.brand-status.ok{border-color:#bee7d6}.brand-status.err{border-color:#efc6c2}.brand-status.pending{border-color:#cbd7ff}.dot{width:7px;height:7px;border-radius:50%;background:#c9ced8;display:inline-block}.ok .dot{background:var(--good)}.err .dot{background:var(--bad)}.pending .dot{background:var(--accent)}
 #map{height:480px;border-radius:20px;border:1px solid var(--line);overflow:hidden}.mapbox{position:relative}.map-status{position:absolute;left:12px;bottom:12px;z-index:500;background:rgba(255,255,255,.96);padding:9px 11px;border-radius:12px;border:1px solid var(--line);font-size:12px;color:#4b5563;box-shadow:0 3px 14px rgba(15,23,42,.08)}
 .section-title{display:flex;justify-content:space-between;align-items:end;margin:24px 0 12px}.section-title h2{margin:0;font-size:20px}.section-title span{font-size:12px;color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.store{box-shadow:0 2px 10px rgba(15,23,42,.03)}.store h3{margin:0 0 4px;font-size:18px}.meta{font-size:12px;color:var(--muted);line-height:1.55}.item{display:grid;grid-template-columns:1fr auto;gap:10px;padding:12px 0;border-top:1px solid var(--line);align-items:center}.item:first-of-type{margin-top:12px}.item-name{font-weight:700;font-size:14px}.item-sub{font-size:11px;color:var(--muted);margin-top:3px}.qty{font-size:21px;font-weight:800}.badge{display:inline-flex;border-radius:999px;padding:5px 8px;font-size:10px;font-weight:700;margin-left:6px}.good{background:#e8f8f0;color:#087a54}.empty{grid-column:1/-1;background:#fff;border:1px dashed #cbd0db;border-radius:18px;padding:30px;text-align:center;color:var(--muted)}.note{margin-top:22px;font-size:12px;line-height:1.65;color:var(--muted)}
-@media(max-width:760px){.toolbar,.grid,.status-grid{grid-template-columns:1fr}.hero{padding:22px}.hero h1{font-size:27px}#map{height:420px}.quick{flex-wrap:wrap}.quick button{flex:1 1 30%}}
+.retail{margin-top:26px}.retail-head{display:flex;justify-content:space-between;gap:12px;align-items:end;margin-bottom:12px}.retail-head h2{margin:0;font-size:20px}.retail-head p{margin:0;font-size:12px;color:var(--muted)}.retail-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.retail-link{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text);background:#fff;border:1px solid var(--line);border-radius:15px;padding:12px 13px;transition:.15s ease;min-height:58px}.retail-link:hover{transform:translateY(-1px);border-color:#c9d4f7;box-shadow:0 6px 18px rgba(15,23,42,.06)}.retail-icon{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:13px;font-weight:900;flex:0 0 34px;background:var(--soft);color:var(--accent)}.retail-text strong{display:block;font-size:13px;line-height:1.2}.retail-text span{display:block;font-size:11px;color:var(--muted);margin-top:4px}
+@media(max-width:900px){.retail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.toolbar,.grid,.status-grid{grid-template-columns:1fr}.hero{padding:22px}.hero h1{font-size:27px}#map{height:420px}.quick{flex-wrap:wrap}.quick button{flex:1 1 30%}.retail-head{align-items:flex-start;flex-direction:column}.retail-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:460px){.retail-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body><div class="wrap">
-<section class="hero"><h1>Pokémon 카드 재고 레이더</h1><p>지도 주변 편의점의 포켓몬카드 전산 재고를 한 번에 확인합니다.</p></section>
+<section class="hero"><h1>Gotta Catch 'Em All!</h1><p>포켓몬 카드 재고 레이더 · 지도 주변 편의점의 전산 재고를 한 번에 확인합니다.</p></section>
 <section class="toolbar">
 <div class="panel"><label>지역 검색</label><input id="place" placeholder="예: 강남역, 잠실, 하남 감일동"/><div class="quick"><button data-lat="37.4765" data-lng="126.9638">낙성대</button><button data-lat="37.5086" data-lng="127.1607">감일동</button><button id="me">내 위치</button></div></div>
 <div class="panel"><label>편의점</label><select id="brand"><option value="all">전체</option><option value="GS25">GS25</option><option value="emart24">이마트24</option><option value="CU">CU</option><option value="7ELEVEN">세븐일레븐</option></select></div>
@@ -27,6 +30,19 @@
 <div class="mapbox"><div id="map"></div><div class="map-status" id="mapStatus">지도를 움직인 뒤 조회하세요</div></div>
 <div class="section-title"><h2>재고 있는 매장</h2><span id="status">아직 조회 안 함</span></div>
 <section id="stores" class="grid"><div class="empty">원하는 지역으로 지도를 옮긴 뒤 재고 조회 버튼을 눌러주세요.</div></section>
+<section class="retail">
+  <div class="retail-head"><h2>온라인 정가 구매처 바로가기</h2><p>재고·판매가는 각 판매처에서 최종 확인하세요.</p></div>
+  <div class="retail-grid">
+    <a class="retail-link" href="https://www.pokemonstore.co.kr/pages/product/list.html?sectionId=SCPC0005" target="_blank" rel="noopener"><span class="retail-icon">P</span><span class="retail-text"><strong>포켓몬 스토어</strong><span>공식 온라인 스토어</span></span></a>
+    <a class="retail-link" href="https://www.lotteon.com/csearch/search/search?mallId=9&platform=pc&q=%ED%8F%AC%EC%BC%93%EB%AA%AC%EC%B9%B4%EB%93%9C" target="_blank" rel="noopener"><span class="retail-icon">T</span><span class="retail-text"><strong>토이저러스</strong><span>롯데ON 토이저러스</span></span></a>
+    <a class="retail-link" href="https://www.lotteon.com/p/product/LO2775866891" target="_blank" rel="noopener"><span class="retail-icon">L</span><span class="retail-text"><strong>롯데ON</strong><span>30주년 상품 바로가기</span></span></a>
+    <a class="retail-link" href="https://search.shopping.naver.com/search/all?query=%ED%8F%AC%EC%BC%93%EB%AA%AC%EC%B9%B4%EB%93%9C%2030%EC%A3%BC%EB%85%84" target="_blank" rel="noopener"><span class="retail-icon">N</span><span class="retail-text"><strong>네이버 쇼핑</strong><span>공식·인증 판매처 검색</span></span></a>
+    <a class="retail-link" href="https://gift.kakao.com/search/result?query=%ED%8F%AC%EC%BC%93%EB%AA%AC%EC%B9%B4%EB%93%9C" target="_blank" rel="noopener"><span class="retail-icon">K</span><span class="retail-text"><strong>카카오 선물하기</strong><span>포켓몬카드 검색</span></span></a>
+    <a class="retail-link" href="https://www.ssg.com/item/itemView.ssg?itemId=1000881834004" target="_blank" rel="noopener"><span class="retail-icon">S</span><span class="retail-text"><strong>SSG.COM</strong><span>공식인증샵 30주년</span></span></a>
+    <a class="retail-link" href="https://browse.gmarket.co.kr/search?keyword=%ED%8F%AC%EC%BC%93%EB%AA%AC%EC%B9%B4%EB%93%9C%2030%EC%A3%BC%EB%85%84" target="_blank" rel="noopener"><span class="retail-icon">G</span><span class="retail-text"><strong>G마켓</strong><span>30주년 검색</span></span></a>
+    <a class="retail-link" href="https://search.11st.co.kr/Search.tmall?kwd=%ED%8F%AC%EC%BC%93%EB%AA%AC%EC%B9%B4%EB%93%9C%2030%EC%A3%BC%EB%85%84" target="_blank" rel="noopener"><span class="retail-icon">11</span><span class="retail-text"><strong>11번가</strong><span>30주년 검색</span></span></a>
+  </div>
+</section>
 <p class="note"><strong>표시 기준:</strong> 포켓몬 TCG 상품 중 전산 재고가 1개 이상 확인된 상품만 표시합니다. 수량 미확인·0개 상품은 숨깁니다. 편의점 전산 재고는 실제 판매·입고 시점과 차이가 날 수 있습니다.</p>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>

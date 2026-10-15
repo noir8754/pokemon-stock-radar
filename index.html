@@ -52,7 +52,7 @@ const ALL=['GS25','emart24','CU','7ELEVEN'];
 const LABEL={GS25:'GS25',emart24:'이마트24',CU:'CU','7ELEVEN':'세븐일레븐'};
 const TERMS=['포켓몬카드','포켓몬확장팩','포켓몬'];
 const map=L.map('map').setView([37.5008,127.0257],12);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:20,attribution:'&copy; OpenStreetMap contributors &copy; CARTO'}).addTo(map);
 const markers=L.layerGroup().addTo(map);
 let grouped=[],diag={};
 function qs(o){return new URLSearchParams(Object.entries(o).filter(([,v])=>v!==undefined&&v!==null&&v!==''))}
